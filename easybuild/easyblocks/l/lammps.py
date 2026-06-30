@@ -429,7 +429,7 @@ class EB_LAMMPS(CMakeMake):
                     self.cfg.update('configopts', '-D%s_ARCH="%s;%s"' % (self.kokkos_prefix, processor_arch, gpu_arch))
 
                 # Disabling ARM NEON as builds on ARM results in build errors for SIMD
-                # See https://github.com/kokkos/kokkos/issues/7483
+                # See https://github.com/kokkos/kokkos/issues/7483 
                 if get_cpu_architecture() == AARCH64:
                     cuda_root = get_software_root('CUDA')
                     if LooseVersion(os.path.basename(cuda_root)) < '13.2.0':
