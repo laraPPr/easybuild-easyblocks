@@ -434,6 +434,7 @@ class EB_LAMMPS(CMakeMake):
                     cuda_root = get_software_root('CUDA')
                     if os.path.basename(cuda_root) in ['12.6.0', '12.1.1', '12.4.0']:
                         self.cfg.update('configopts', '-D%s_ARCH_ARM_NEON=OFF' % (self.kokkos_prefix))
+                        self.cfg.update('configopts', '-D%s_ARCH_ARM_SVE=OFF' % (self.kokkos_prefix))
 
             else:
                 if LooseVersion(self.cur_version) >= LooseVersion(self.ref_version):
