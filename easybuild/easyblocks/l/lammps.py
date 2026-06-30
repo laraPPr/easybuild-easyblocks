@@ -432,9 +432,9 @@ class EB_LAMMPS(CMakeMake):
                 # See https://github.com/kokkos/kokkos/issues/7483
                 if get_cpu_architecture() == AARCH64:
                     cuda_root = get_software_root('CUDA')
-                    if os.path.basename(cuda_root) in ['12.6.0', '12.1.1', '12.4.0']:
-                        self.cfg.update('configopts', '-D%s_ARCH_ARM_NEON=OFF' % (self.kokkos_prefix))
-                        self.cfg.update('configopts', '-D%s_ARCH_ARM_SVE=OFF' % (self.kokkos_prefix))
+                    if LooseVersion(os.path.basename(cuda_root)) < '13.2.0':
+                        self.cfg.update('configopts', '-D%s_ARCH_ARM_NEON=off' % (self.kokkos_prefix))
+                        self.cfg.update('configopts', '-D%s_ARCH_ARM_SVE=off' % (self.kokkos_prefix))
 
             else:
                 if LooseVersion(self.cur_version) >= LooseVersion(self.ref_version):
