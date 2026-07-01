@@ -221,13 +221,16 @@ class EB_LAMMPS(CMakeMake):
 
             # Disabling ARM NEON as builds on ARM results in build errors for SIMD
             # See https://github.com/kokkos/kokkos/issues/7483
+            print('DEBUG')
+            print(build_option('optarch'))
+            print(build_option('default_optarch'))
             if self.cfg['kokkos']:
                 if get_cpu_architecture() == AARCH64:
                     cuda_root = get_software_root('CUDA')
                     if LooseVersion(os.path.basename(cuda_root)) < '13.2.0':
                         processor_arch = 'ARMV80'
                         print_msg("Overwrite determined cpu arch to build without NEON: %s" % processor_arch)
-                        
+
         # arch names changed between some releases :(
         if LooseVersion(self.cur_version) < LooseVersion(translate_lammps_version('29Oct2020')):
             if processor_arch in KOKKOS_LEGACY_ARCH_MAPPING.keys():
@@ -445,6 +448,7 @@ class EB_LAMMPS(CMakeMake):
                     if LooseVersion(os.path.basename(cuda_root)) < '13.2.0':
                         self.cfg.update('configopts', '-D%s_ARCH_ARM_NEON=off' % (self.kokkos_prefix))
                         self.cfg.update('configopts', '-D%s_ARCH_ARM_SVE=off' % (self.kokkos_prefix))
+                        self.cfg.update('configopts', '-DCMAKE_CXX_FLAGS="-DKOKKOS_ARCH_ARM_NEON=0 -DKOKKOS_ARCH_ARM_SVE=0"')
 
             else:
                 if LooseVersion(self.cur_version) >= LooseVersion(self.ref_version):
