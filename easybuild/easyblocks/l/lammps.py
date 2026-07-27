@@ -622,7 +622,7 @@ class EB_LAMMPS(CMakeMake):
             if self.cfg['kokkos']:
                 if self.cuda:
                     if run_gpu_tests == False:
-                        lammps_cmd_args = 'cmdargs=["-sf", "kk", "-k", "on", "g", "0"]'
+                        lammps_cmd_args = 'cmdargs=["-sf", "kk", "-k", "on"]'
 
 
         custom_commands = [
