@@ -619,7 +619,7 @@ class EB_LAMMPS(CMakeMake):
         # When no gpus are present it should be explicitly disabled.
         lammps_cmd_args = ''
         if LooseVersion(self.version) >= LooseVersion('22Jul2025'):
-            if self.kokos:
+            if self.cfg['kokkos']:
                 if self.cuda:
                     if run_gpu_tests == False:
                         cmd_args = 'cmdargs=["-sf", "kk", "-k", "on", "g", "0"]'
