@@ -639,6 +639,11 @@ class EB_LAMMPS(CMakeMake):
                         'from lammps import lammps; l=lammps(cmdargs=["-sf", "kk", "-k", "on", "g", "1"]); '
                         'l.file("%s")' % os.path.join(self.installdir, "examples", "msst", "in.msst")
                     )
+                else: # disable gpu when no gpu pressent
+                    custom_commands.append(
+                        'from lammps import lammps; l=lammps(cmdargs=["-sf", "kk", "-k", "on", "g", "0"]); '
+                        'l.file("%s")' % os.path.join(self.installdir, "examples", "msst", "in.msst")
+                    )
             else:  # CPU only
                 custom_commands.append(
                     'from lammps import lammps; l=lammps(cmdargs=["-sf", "kk", "-k", "on"]); l.file("%s")' %
