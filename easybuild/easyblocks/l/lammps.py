@@ -588,6 +588,16 @@ class EB_LAMMPS(CMakeMake):
     def sanity_check_step(self, *args, **kwargs):
         """Run custom sanity checks for LAMMPS files, dirs and commands."""
 
+        # check if a GPU is available for tests
+        run_gpu_tests = False
+        if self.cuda:
+            if not which('nvidia-smi', on_error=IGNORE):
+                print_warning('Could not find nvidia-smi. Assuming a system without GPUs and skipping GPU tests!')
+            elif os.environ.get('CUDA_VISIBLE_DEVICES') == '-1':
+                print_warning('GPUs explicitely disabled via CUDA_VISIBLE_DEVICES. Skipping GPU tests!')
+            else:
+                run_gpu_tests = True
+
         # Set cur_version when running --sanity-check-only
         if self.cur_version is None:
             self.cur_version = translate_lammps_version(self.version, path=self.installdir)
@@ -605,24 +615,26 @@ class EB_LAMMPS(CMakeMake):
                 'nemd', 'obstacle', 'pour', 'voronoi',
             ]
 
+        # From 22Jul2025 LAMMPS with kokkos requires libcuda.so.1 when running the tests.
+        # When no gpus are present it should be explicitly disabled.
+        lammps_cmd_args = ''
+        if LooseVersion(self.version) >= LooseVersion('22Jul2025'):
+            if self.kokos:
+                if self.cuda:
+                    if run_gpu_tests == False:
+                        cmd_args = 'cmdargs=["-sf", "kk", "-k", "on", "g", "0"]'
+
+
         custom_commands = [
             # LAMMPS test - you need to call specific test file on path
-            'from lammps import lammps; l=lammps(); l.file("%s")' %
-            # Examples are part of the install with paths like (installdir)/examples/filename/in.filename
-            os.path.join(self.installdir, "examples", "%s" % check_file, "in.%s" % check_file)
+            'from lammps import lammps; l=lammps(%s); l.file("%s")' % (
+                lammps_cmd_args,
+                # Examples are part of the install with paths like (installdir)/examples/filename/in.filename
+                os.path.join(self.installdir, "examples", "%s" % check_file, "in.%s" % check_file)
+            )
             # And this should be done for every file specified above
             for check_file in sanity_check_test_inputs
         ]
-
-        # check if a GPU is available for tests
-        run_gpu_tests = False
-        if self.cuda:
-            if not which('nvidia-smi', on_error=IGNORE):
-                print_warning('Could not find nvidia-smi. Assuming a system without GPUs and skipping GPU tests!')
-            elif os.environ.get('CUDA_VISIBLE_DEVICES') == '-1':
-                print_warning('GPUs explicitely disabled via CUDA_VISIBLE_DEVICES. Skipping GPU tests!')
-            else:
-                run_gpu_tests = True
 
         # add accelerator-specific tests
         # INTEL package - it requires mpi4py - run only for updated easyconfigs >= 29Aug2024
@@ -637,11 +649,6 @@ class EB_LAMMPS(CMakeMake):
                 if run_gpu_tests:
                     custom_commands.append(
                         'from lammps import lammps; l=lammps(cmdargs=["-sf", "kk", "-k", "on", "g", "1"]); '
-                        'l.file("%s")' % os.path.join(self.installdir, "examples", "msst", "in.msst")
-                    )
-                else: # disable gpu when no gpu pressent
-                    custom_commands.append(
-                        'from lammps import lammps; l=lammps(cmdargs=["-sf", "kk", "-k", "on", "g", "0"]); '
                         'l.file("%s")' % os.path.join(self.installdir, "examples", "msst", "in.msst")
                     )
             else:  # CPU only
