@@ -433,7 +433,6 @@ class EB_LAMMPS(CMakeMake):
                     self.cfg.update('configopts', '-DCMAKE_CXX_COMPILER="%s"' % nvcc_wrapper_path)
                     self.cfg.update('configopts', '-DCMAKE_CXX_FLAGS="-ccbin $CXX $CXXFLAGS"')
                     self.cfg.update('configopts', '-D%s_ARCH="%s;%s"' % (self.kokkos_prefix, processor_arch, gpu_arch))
-
                 # Disabling ARM NEON as builds on ARM results in build errors for SIMD
                 # See https://github.com/kokkos/kokkos/issues/7483
                 if get_cpu_architecture() == AARCH64:
@@ -442,7 +441,6 @@ class EB_LAMMPS(CMakeMake):
                         cxxflags = os.getenv('CXXFLAGS', '')
                         cxxflags += ' -march=armv8-a+nosimd'
                         env.setvar('CXXFLAGS', cxxflags)
-
             else:
                 if LooseVersion(self.cur_version) >= LooseVersion(self.ref_version):
                     self.cfg.update('configopts', '-D%s_ARCH_%s=yes' % (self.kokkos_prefix, processor_arch))
