@@ -49,7 +49,7 @@ from easybuild.tools.config import build_option, IGNORE
 from easybuild.tools.filetools import copy_dir, copy_file, mkdir, read_file, which
 from easybuild.tools.modules import get_software_root, get_software_version
 from easybuild.tools.run import run_shell_cmd
-from easybuild.tools.systemtools import AARCH64, get_cpu_architecture, get_shared_lib_ext, get_avail_core_count
+from easybuild.tools.systemtools import AARCH64, get_cpu_architecture, get_shared_lib_ext, get_avail_core_count, get_gpu_info
 from easybuild.tools.toolchain.compiler import OPTARCH_GENERIC
 
 from easybuild.easyblocks.generic.cmakemake import CMakeMake
@@ -509,10 +509,29 @@ class EB_LAMMPS(CMakeMake):
             else:
                 self.cfg['runtest'] = False
 
+        if self.cuda:
+            if not get_gpu_info():
+               ld_preload = os.getenv('LD_PRELOAD', '')
+               cuda_root = get_software_root('CUDA')
+               libcuda = cuda_root + '/stubs/lib/libcuda.so' + ':' + cuda_root + '/stubs/lib/libcuda.so.1'
+               ld_preload = libcuda + ":" + ld_preload
+             
+               env.setvar('LD_PRELOAD', ld_preload)
+               print(cuda_root)
+               print(ld_preload) 
+
         return super().configure_step()
 
+    def build_step(self):
+        """DEBUG"""
+        cuda_root = get_software_root('CUDA')
+        print(cuda_root)
+        ld_preload = os.getenv('LD_PRELOAD', '')
+        print(ld_preload)
+        return super().build_step()
+
     def install_step(self):
-        """Install LAMMPS and examples/potentials."""
+        """Install LAMMPS and examples/potentials.""" 
         super().install_step()
 
         # Copy LICENSE and version file so these can be used with `--module-only`
