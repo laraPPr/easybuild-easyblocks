@@ -510,7 +510,8 @@ class EB_LAMMPS(CMakeMake):
                 self.cfg['runtest'] = False
 
         if self.cuda:
-            if not get_gpu_info():
+            gpus = get_gpu_info()
+            if 'NVIDIA' not in gpus:
                ld_preload = os.getenv('LD_PRELOAD', '')
                cuda_root = get_software_root('CUDA')
                libcuda = cuda_root + '/stubs/lib/libcuda.so' + ':' + cuda_root + '/stubs/lib/libcuda.so.1'
