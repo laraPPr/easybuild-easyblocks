@@ -521,7 +521,7 @@ class EB_LAMMPS(CMakeMake):
         return super().configure_step()
 
     def install_step(self):
-        """Install LAMMPS and examples/potentials.""" 
+        """Install LAMMPS and examples/potentials."""
         super().install_step()
 
         # Copy LICENSE and version file so these can be used with `--module-only`
@@ -658,7 +658,6 @@ class EB_LAMMPS(CMakeMake):
             'from lammps import lammps; l=lammps(cmdargs=["-sf", "opt"]); l.file("%s")' %
             os.path.join(self.installdir, "examples", "msst", "in.msst")
         )
-
 
         # mpirun command needs an l.finalize() in the sanity check from LAMMPS 29Sep2021
         # This is actually not needed if mpi4py is installed, and can cause a crash in version 2025+
