@@ -510,26 +510,14 @@ class EB_LAMMPS(CMakeMake):
                 self.cfg['runtest'] = False
 
         if self.cuda:
-            gpus = get_gpu_info()
-            if 'NVIDIA' not in gpus:
+            if not get_gpu_info():
                ld_preload = os.getenv('LD_PRELOAD', '')
                cuda_root = get_software_root('CUDA')
                libcuda = cuda_root + '/stubs/lib/libcuda.so' + ':' + cuda_root + '/stubs/lib/libcuda.so.1'
-               ld_preload = libcuda + ":" + ld_preload
-             
+               ld_preload = libcuda + ":" + ld_preload 
                env.setvar('LD_PRELOAD', ld_preload)
-               print(cuda_root)
-               print(ld_preload) 
 
         return super().configure_step()
-
-    def build_step(self):
-        """DEBUG"""
-        cuda_root = get_software_root('CUDA')
-        print(cuda_root)
-        ld_preload = os.getenv('LD_PRELOAD', '')
-        print(ld_preload)
-        return super().build_step()
 
     def install_step(self):
         """Install LAMMPS and examples/potentials.""" 
@@ -583,7 +571,13 @@ class EB_LAMMPS(CMakeMake):
             test_cmd = 'ctest'
             if LooseVersion(self.cmake_version) >= '3.17.0':
                 test_cmd += ' --no-tests=error'
-            test_cmd += ' -LE unstable -E "TestMliapPyUnified|AtomicPairStyle:meam_spline|KSpaceStyle:scafacos.*"'
+            skipped_tests = "TestMliapPyUnified|AtomicPairStyle:meam_spline|KSpaceStyle:scafacos.*"
+            if self.cuda:
+                gpus = get_gpu_info()
+                if 'NVIDIA' not in gpus:
+                    # These tests require libcuda.so that is not a stub
+                    skipped_tests += "|LibraryOpen|LibraryProperties|LammpsClass|NeighborClass"
+            test_cmd += ' -LE unstable -E "%s"' % skipped_tests
             self.log.debug(f"Running tests using test_cmd = '{test_cmd}' as test_cmd")
             self.cfg['test_cmd'] = test_cmd
 
@@ -663,6 +657,7 @@ class EB_LAMMPS(CMakeMake):
             'from lammps import lammps; l=lammps(cmdargs=["-sf", "opt"]); l.file("%s")' %
             os.path.join(self.installdir, "examples", "msst", "in.msst")
         )
+
 
         # mpirun command needs an l.finalize() in the sanity check from LAMMPS 29Sep2021
         # This is actually not needed if mpi4py is installed, and can cause a crash in version 2025+
