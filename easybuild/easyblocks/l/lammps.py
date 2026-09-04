@@ -698,7 +698,7 @@ class EB_LAMMPS(CMakeMake):
                         ld_preload = libcuda
                     else:
                         ld_preload = '%s:%s' % (ld_preload, libcuda)
-                ld_preload = 'LD_PRELOAD=%s' % ld_preload 
+                ld_preload = 'LD_PRELOAD=%s' % ld_preload
                 custom_commands = [ld_preload + " " + cmd for cmd in custom_commands]
 
         custom_commands = ["cd %s && " % execution_dir + cmd for cmd in custom_commands]
