@@ -47,9 +47,10 @@ from easybuild.framework.easyconfig import CUSTOM, MANDATORY
 from easybuild.tools.build_log import EasyBuildError, print_warning, print_msg
 from easybuild.tools.config import build_option, IGNORE
 from easybuild.tools.filetools import copy_dir, copy_file, mkdir, read_file, which
-from easybuild.tools.modules import get_software_root, get_software_version, modules_tool
+from easybuild.tools.modules import get_software_root, get_software_version
 from easybuild.tools.run import run_shell_cmd
-from easybuild.tools.systemtools import AARCH64, get_cpu_architecture, get_shared_lib_ext, get_avail_core_count, get_gpu_info
+from easybuild.tools.systemtools import (AARCH64, get_cpu_architecture, get_shared_lib_ext,
+                                         get_avail_core_count, get_gpu_info)
 from easybuild.tools.toolchain.compiler import OPTARCH_GENERIC
 
 from easybuild.easyblocks.generic.cmakemake import CMakeMake
@@ -511,7 +512,7 @@ class EB_LAMMPS(CMakeMake):
 
         # For crosscompiling LAMMPS with CUDA:
         # - CUDA stubs need to be explicitly added to the linker
-        # - libcuda.so needs to be added to LD_PRELOAD 
+        # - libcuda.so needs to be added to LD_PRELOAD
         if self.cuda:
             gpus = get_gpu_info()
             if 'NVIDIA' not in gpus:
@@ -698,7 +699,7 @@ class EB_LAMMPS(CMakeMake):
                     else:
                         ld_preload = '%s:%s' % (ld_preload, libcuda)
                 ld_preload = 'LD_PRELOAD=%s' % ld_preload 
-                custom_commands = [ ld_preload + " " + cmd for cmd in custom_commands]
+                custom_commands = [ld_preload + " " + cmd for cmd in custom_commands]
 
         custom_commands = ["cd %s && " % execution_dir + cmd for cmd in custom_commands]
 
