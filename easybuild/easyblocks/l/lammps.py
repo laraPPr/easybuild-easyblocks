@@ -47,7 +47,7 @@ from easybuild.framework.easyconfig import CUSTOM, MANDATORY
 from easybuild.tools.build_log import EasyBuildError, print_warning, print_msg
 from easybuild.tools.config import build_option, IGNORE
 from easybuild.tools.filetools import copy_dir, copy_file, mkdir, read_file, which
-from easybuild.tools.modules import get_software_root, get_software_version
+from easybuild.tools.modules import get_software_root, get_software_version, modules_tool
 from easybuild.tools.run import run_shell_cmd
 from easybuild.tools.systemtools import AARCH64, get_cpu_architecture, get_shared_lib_ext, get_avail_core_count, get_gpu_info
 from easybuild.tools.toolchain.compiler import OPTARCH_GENERIC
@@ -509,14 +509,21 @@ class EB_LAMMPS(CMakeMake):
             else:
                 self.cfg['runtest'] = False
 
+        # For crosscompiling LAMMPS with CUDA:
+        # - CUDA stubs need to be explicitly added to the linker
+        # - libcuda.so needs to be added to LD_PRELOAD 
         if self.cuda:
             gpus = get_gpu_info()
             if 'NVIDIA' not in gpus:
-               ld_preload = os.getenv('LD_PRELOAD', '')
-               cuda_root = get_software_root('CUDA')
-               libcuda = cuda_root + '/stubs/lib/libcuda.so' + ':' + cuda_root + '/stubs/lib/libcuda.so.1'
-               ld_preload = libcuda + ":" + ld_preload 
-               env.setvar('LD_PRELOAD', ld_preload)
+                cuda_root = get_software_root('CUDA')
+                libcuda = '%s/lib/stubs/libcuda.so:%s/lib64/stubs/libcuda.so.1' % (cuda_root, cuda_root)
+                self.cfg.update('configopts', '-DCMAKE_EXE_LINKER_FLAGS=-Wl,-rpath-link,%s/lib/stubs' % cuda_root)
+                ld_preload = os.getenv('LD_PRELOAD', '')
+                if ld_preload == '':
+                    self.ld_preload = libcuda
+                else:
+                    self.ld_preload = '%s:%s' % (ld_preload, libcuda)
+                env.setvar('LD_PRELOAD', self.ld_preload)
 
         return super().configure_step()
 
@@ -673,6 +680,25 @@ class EB_LAMMPS(CMakeMake):
             test_core_cnt = min(self.cfg.parallel, get_avail_core_count(), 4)
             self.log.info("Using %s cores for the MPI tests" % test_core_cnt)
             custom_commands = [self.toolchain.mpi_cmd_for(cmd, test_core_cnt) for cmd in custom_commands]
+
+        # When crosscompiling LAMMPS with CUDA the build and testing require LD_PRELOAD being set.
+        # During testing I found that LD_PRELOAD was not picked up in the environment.
+        # It has to be explicitly set in the command.
+        if self.cuda:
+            gpus = get_gpu_info()
+            if 'NVIDIA' not in gpus:
+                ld_preload = os.getenv('LD_PRELOAD', '')
+                # When running --module-only or --sanity-check-only LD_PRELOAD will not be set.
+                # Checking if libcuda.so is in LD_PRELOAD.
+                if 'libcuda.so' not in ld_preload:
+                    cuda_root = get_software_root('CUDA')
+                    libcuda = cuda_root + '/stubs/lib/libcuda.so' + ':' + cuda_root + '/stubs/lib/libcuda.so.1'
+                    if ld_preload == '':
+                        ld_preload = libcuda
+                    else:
+                        ld_preload = '%s:%s' % (ld_preload, libcuda)
+                ld_preload = 'LD_PRELOAD=%s' % ld_preload 
+                custom_commands = [ ld_preload + " " + cmd for cmd in custom_commands]
 
         custom_commands = ["cd %s && " % execution_dir + cmd for cmd in custom_commands]
 
